@@ -1,7 +1,9 @@
 #import "XRSA.h"
 
 @interface XRSA ()
-@property (nonatomic, strong) NSNumber *keyLengthBits;
+@property (nonatomic) NSNumber *keyLength;
+@property (nonatomic) SecKeyRef publicKey;
+
 @end
 
 @implementation XRSA
@@ -13,6 +15,10 @@
         if (keyData == nil) {
             return nil;
         }
+        
+        SecCertificateRef certificate;
+        SecPolicyRef policy;
+        SecTrustRef trust;
 
         certificate = SecCertificateCreateWithData(kCFAllocatorDefault, ( __bridge CFDataRef) keyData);
         if (certificate == nil) {
@@ -24,25 +30,46 @@
         OSStatus returnCode = SecTrustCreateWithCertificates(certificate, policy, &trust);
         if (returnCode != noErr) {
             NSLog(@"SecTrustCreateWithCertificates fail. Error Code: %d", (int)returnCode);
+            CFRelease(certificate);
+            CFRelease(policy);
             return nil;
         }
+
+        // TODO: Sigh, Apple doesn't make this fool-proof:
+        /* Because this function might look on the network for certificates in the certificate chain, the function might block while attempting network access. You should never call it from your main thread; call it only from within a function running on a dispatch queue or on a separate thread. Alternatively, in macOS, you can use SecTrustEvaluateAsync from your main thread. In iOS, you can do the same thing using dispatch_once.
+         
+            So we should probably dispatch this on another thread in the future. And all we're trying to get is get a public key from a *.der file...
+         */
 
         SecTrustResultType trustResultType;
         returnCode = SecTrustEvaluate(trust, &trustResultType);
         if (returnCode != noErr) {
             NSLog(@"SecTrustEvaluate fail. Error Code: %d", (int)returnCode);
+            CFRelease(certificate);
+            CFRelease(policy);
+            CFRelease(trust);
             return nil;
         }
-
-        publicKey = SecTrustCopyPublicKey(trust);
-        if (publicKey == nil) {
+ 
+        // The trustResultType seems to always be: kSecTrustResultRecoverableTrustFailure, but we don't care.
+        // We are just looking for the public key, below.
+        
+        _publicKey = SecTrustCopyPublicKey(trust);
+        if (_publicKey == nil) {
             NSLog(@"SecTrustCopyPublicKey fail");
+            CFRelease(certificate);
+            CFRelease(policy);
+            CFRelease(trust);
             return nil;
         }
 
-        NSInteger keyLength = SecKeyGetBlockSize(publicKey);
-        self.keyLengthBits = @(keyLength);
-        maxPlainLen = keyLength - 12;
+        NSInteger keyLength = SecKeyGetBlockSize(_publicKey);
+        self.keyLength = @(keyLength);
+        _maxPlainLen = keyLength - 12;
+        
+        CFRelease(certificate);
+        CFRelease(policy);
+        CFRelease(trust);
     }
 
     return self;
@@ -61,82 +88,35 @@
 
 - (NSData *) encryptWithData:(NSData *)content {
     size_t plainLen = [content length];
-    if (plainLen > maxPlainLen) {
-        NSLog(@"content(%ld) is too long, must < %ld", plainLen, maxPlainLen);
+    if (plainLen > self.maxPlainLen) {
+        NSLog(@"content(%ld) is too long, must < %ld", plainLen, self.maxPlainLen);
         return nil;
     }
 
-    void *plain = malloc(plainLen);
-    [content getBytes:plain
-               length:plainLen];
-
-    size_t cipherLen = [self.keyLengthBits integerValue];
+    size_t cipherLen = [self.keyLength integerValue];
     void *cipher = malloc(cipherLen);
 
-    OSStatus returnCode = SecKeyEncrypt(publicKey, kSecPaddingPKCS1, plain,
+    // TODO - possible optimization with NSMutableData:
+    // "The input buffer (plainText) can be the same as the output buffer (cipherText) to reduce the amount of memory used by the function." - Apple Docs
+    OSStatus returnCode = SecKeyEncrypt(self.publicKey, kSecPaddingPKCS1, [content bytes],
                                         plainLen, cipher, &cipherLen);
 
     NSData *result = nil;
     if (returnCode != noErr) {
         NSLog(@"SecKeyEncrypt fail. Error Code: %d", (int)returnCode);
+        free(cipher);
     }
     else {
-        result = [NSData dataWithBytes:cipher
-                                length:cipherLen];
+        result = [NSData dataWithBytesNoCopy:cipher length:cipherLen];
     }
-
-    free(plain);
-    free(cipher);
 
     return result;
 }
 
-- (NSData *) encryptWithString:(NSString *)content {
-    return [self encryptWithData:[content dataUsingEncoding:NSUTF8StringEncoding]];
-}
 
-- (NSString *) encryptToString:(NSString *)content {
-    NSData *data = [self encryptWithString:content];
-    return [self base64forData:data];
-}
-
-// convert NSData to NSString
-- (NSString*)base64forData:(NSData*)theData {
-    const uint8_t* input = (const uint8_t*)[theData bytes];
-    NSInteger length = [theData length];
-
-    static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-
-    NSMutableData* data = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
-    uint8_t* output = (uint8_t*)data.mutableBytes;
-
-    NSInteger i;
-    for (i=0; i < length; i += 3) {
-        NSInteger value = 0;
-        NSInteger j;
-        for (j = i; j < (i + 3); j++) {
-            value <<= 8;
-
-            if (j < length) {
-                value |= (0xFF & input[j]);
-            }
-        }
-
-        NSInteger theIndex = (i / 3) * 4;
-        output[theIndex + 0] =                    table[(value >> 18) & 0x3F];
-        output[theIndex + 1] =                    table[(value >> 12) & 0x3F];
-        output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
-        output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
-    }
-
-    return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-}
-
-- (void)dealloc{
-    CFRelease(certificate);
-    CFRelease(trust);
-    CFRelease(policy);
-    CFRelease(publicKey);
+- (void)dealloc
+{
+    CFRelease(_publicKey);
 }
 
 @end
