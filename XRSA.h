@@ -4,9 +4,7 @@
 
 @property (nonatomic) size_t maxPlainLen;
 
-- (XRSA *)initWithData:(NSData *)keyData;
-- (XRSA *)initWithPublicKey:(NSString *)publicKeyPath;
-
+- (XRSA *)initWithDERData:(NSData *)keyData;
 - (NSData *) encryptWithData:(NSData *)content;
 
 @end

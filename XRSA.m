@@ -8,7 +8,7 @@
 
 @implementation XRSA
 
-- (XRSA *)initWithData:(NSData *)keyData {
+- (XRSA *)initWithDERData:(NSData *)keyData {
     self = [super init];
 
     if (self) {
@@ -75,16 +75,6 @@
     return self;
 }
 
-- (XRSA *)initWithPublicKey:(NSString *)publicKeyPath {
-    if (publicKeyPath == nil) {
-        NSLog(@"Can not find %@", publicKeyPath);
-        return nil;
-    }
-
-    NSData *publicKeyFileContent = [NSData dataWithContentsOfFile:publicKeyPath];
-
-    return [self initWithData:publicKeyFileContent];
-}
 
 - (NSData *) encryptWithData:(NSData *)content {
     size_t plainLen = [content length];
