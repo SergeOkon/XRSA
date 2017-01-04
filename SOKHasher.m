@@ -24,7 +24,7 @@
 
 -(instancetype)initWithFunc:(SOKHasherHashFunc)hashFunction
 {
-    // Sanity Check - update these as we implement new hashing function.
+    // Sanity Check - update these as we implement new hashing functions.
     if (hashFunction < SOKHasher_MD5_UNSECURE || hashFunction > SOKHasher_SHA512) {
         return nil;
     }
@@ -42,10 +42,10 @@
 // CommonCrypto's function are types are well named, so we are able to to generate our setUpPointersForAlgorithm
 //  code with a template.
 #define SOK_GenerateContextAndFunctionsForHashFunction(func, ctx) \
-    _hashStateStructure = malloc(sizeof(CC_ ## ctx ## _CTX));                                    \
-    _hashInitFunc   = (int(*)(void *ctx)) CC_ ## func ## _Init;                                  \
-    _hashUpdateFunc = (int(*)(void *ctx, const void *data, CC_LONG len)) CC_ ## func ## _Update; \
-    _hashFinalFunc  = (int(*)(unsigned char *md, void *ctx)) CC_ ## func ## _Final;              \
+    _hashStateStructure = malloc(sizeof(CC_ ## ctx ## _CTX));                                     \
+    _hashInitFunc   = (int(*)(void *ctx)) CC_ ## func ## _Init;                                   \
+    _hashUpdateFunc = (int(*)(void *ctx, const void *data, CC_LONG len)) CC_ ## func ## _Update;  \
+    _hashFinalFunc  = (int(*)(unsigned char *md, void *ctx)) CC_ ## func ## _Final;               \
     _hashLength     = CC_ ## func ## _DIGEST_LENGTH
 
 

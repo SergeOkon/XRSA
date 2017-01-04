@@ -11,6 +11,6 @@
 @interface SOKRandom : NSObject
 
 // Generates a Cryptographically secure random NSData object of the specified size in bytes
-+(NSData *) secRandomBytes:(NSUInteger)length;
++(NSData * _Nullable) secRandomBytes:(NSUInteger)length;
 
 @end

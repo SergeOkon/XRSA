@@ -22,14 +22,14 @@ typedef NS_ENUM(NSInteger, SOKHasherHashFunc) {
 @property (nonatomic, readonly) SOKHasherHashFunc hashFunc;
 @property (nonatomic, readonly) NSUInteger hashLength;
 
--(instancetype)initWithFunc:(SOKHasherHashFunc)hashFunction;
+-(instancetype _Nullable)initWithFunc:(SOKHasherHashFunc)hashFunction;
 
 // Just get a hash value quickly.
--(NSData *)hash:(NSData*)data;
+-(NSData *_Nonnull) hash:(NSData* _Nonnull)data;
 
 // If you'd like to stream the data
--(void)startHash;
--(void)enterData:(NSData *)data;
--(NSData *)completeHash;  // Returns the has value
+-(void) startHash;
+-(void) enterData:(NSData * _Nonnull)data;
+-(NSData * _Nonnull) completeHash;  // Returns the has value
 
 @end
