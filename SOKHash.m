@@ -1,14 +1,14 @@
 //
-//  SOKHasher.m
+//  SOKHash.m
 //
 //  Created by Serge Okon on 2017-01-03.
 //  Copyright © 2017 Momentus Software. All rights reserved.
 //
 
-#import "SOKHasher.h"
+#import "SOKHash.h"
 #include <CommonCrypto/CommonDigest.h>
 
-@interface SOKHasher()
+@interface SOKHash()
 
 @property (nonatomic) SOKHasherHashFunc hashFunc;
 @property (nonatomic) NSUInteger hashLength;
@@ -20,12 +20,12 @@
 @property (nonatomic) int (*hashFinalFunc)(unsigned char *md, void *ctx);
 @end
 
-@implementation SOKHasher : NSObject
+@implementation SOKHash : NSObject
 
 -(instancetype)initWithFunc:(SOKHasherHashFunc)hashFunction
 {
     // Sanity Check - update these as we implement new hashing functions.
-    if (hashFunction < SOKHasher_MD5_UNSECURE || hashFunction > SOKHasher_SHA512) {
+    if (hashFunction < SOKHash_MD5_UNSECURE || hashFunction > SOKHash_SHA512) {
         return nil;
     }
     
@@ -61,27 +61,27 @@
     
     // Then set them up based on the algorithm
     switch (_hashFunc) {
-        case SOKHasher_MD5_UNSECURE:
+        case SOKHash_MD5_UNSECURE:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ MD5,
                                                            /*ctx used*/ MD5);
             break;
-        case SOKHasher_SHA1:
+        case SOKHash_SHA1:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ SHA1,
                                                            /*CTX used*/ SHA1);
             break;
-        case SOKHasher_SHA224:
+        case SOKHash_SHA224:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ SHA224,
                                                            /*CTX used*/ SHA256);
             break;
-        case SOKHasher_SHA256:
+        case SOKHash_SHA256:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ SHA256,
                                                            /*CTX used*/ SHA256);
             break;
-        case SOKHasher_SHA384:
+        case SOKHash_SHA384:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ SHA384,
                                                            /*CTX used*/ SHA512);
             break;
-        case SOKHasher_SHA512:
+        case SOKHash_SHA512:
             SOK_GenerateContextAndFunctionsForHashFunction(/*function*/ SHA512,
                                                            /*CTX used*/ SHA512);
             break;

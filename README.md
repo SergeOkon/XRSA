@@ -19,7 +19,7 @@ RSA Encryption in iOS:
 
 1) generate a key-pair using SSL.
 
-    openssl req -x509 -out public_key.der -outform der -new -newkey rsa:1024 -keyout private_key.pem -days 3650
+    openssl req -x509 -out public_key.der -outform der -new -newkey rsa:2048 -keyout private_key.pem -days 3650 -batch
 
 There are few points have to mention:
 

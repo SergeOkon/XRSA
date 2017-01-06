@@ -1,14 +1,20 @@
-#import "XRSA.h"
+// -----------
+// This code was branched from XRSA - https://github.com/xjunior/XRSA
+// Which, in turn, packaged code from: http://blog.iamzsx.me/show.html?id=155002 as a cocoapod
 
-@interface XRSA ()
+
+
+#import "SOKRSA.h"
+
+@interface SOKRSA ()
 @property (nonatomic) NSNumber *keyLength;
 @property (nonatomic) SecKeyRef publicKey;
 
 @end
 
-@implementation XRSA
+@implementation SOKRSA
 
-- (XRSA *)initWithDERData:(NSData *)keyData {
+- (instancetype)initWithDERData:(NSData *)keyData {
     self = [super init];
 
     if (self) {
